@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { useCart } from "@/components/CartContext";
-import { PlusIcon, MinusIcon, TrashIcon } from "@/components/icons";
+import { PlusIcon, MinusIcon, TrashIcon, SpinnerIcon } from "@/components/icons";
 
 function formatPrice(cents: number, currency = "USD") {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
@@ -11,6 +12,19 @@ function formatPrice(cents: number, currency = "USD") {
 
 export default function CartContent() {
   const { cart, loading, error, updateItem, removeItem } = useCart();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const handleUpdate = async (productId: string, quantity: number) => {
+    setPendingId(productId);
+    await updateItem(productId, quantity);
+    setPendingId(null);
+  };
+
+  const handleRemove = async (productId: string) => {
+    setPendingId(productId);
+    await removeItem(productId);
+    setPendingId(null);
+  };
 
   if (!cart || cart.items.length === 0) {
     return (
@@ -43,86 +57,96 @@ export default function CartContent() {
       <div className="flex flex-col lg:flex-row gap-10">
         <div className="flex-1 min-w-0">
           <ul className="divide-y divide-white/5">
-            {cart.items.map((item) => (
-              <li key={item.productId} className="flex gap-4 py-6">
-                <Link href={`/products/${item.product.slug}`} className="shrink-0">
-                  <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-zinc-900">
-                    {item.product.images[0] ? (
-                      <Image
-                        src={item.product.images[0]}
-                        alt={item.product.name}
-                        fill
-                        sizes="96px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-zinc-600 text-xs">
-                        No img
-                      </div>
-                    )}
-                  </div>
-                </Link>
+            {cart.items.map((item) => {
+              const isPending = pendingId === item.productId;
+              return (
+                <li
+                  key={item.productId}
+                  className={`flex gap-4 py-6 transition-opacity duration-150 ${isPending ? "opacity-50 pointer-events-none" : ""}`}
+                >
+                  <Link href={`/products/${item.product.slug}`} className="shrink-0">
+                    <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-zinc-900">
+                      {item.product.images[0] ? (
+                        <Image
+                          src={item.product.images[0]}
+                          alt={item.product.name}
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-zinc-600 text-xs">
+                          No img
+                        </div>
+                      )}
+                    </div>
+                  </Link>
 
-                <div className="flex flex-1 flex-col gap-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <Link
-                      href={`/products/${item.product.slug}`}
-                      className="font-medium text-zinc-100 hover:text-white leading-snug line-clamp-2 transition-colors"
-                    >
-                      {item.product.name}
-                    </Link>
-                    <button
-                      onClick={() => removeItem(item.productId)}
-                      disabled={loading}
-                      className="shrink-0 rounded-lg p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-                      aria-label={`Remove ${item.product.name}`}
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <span className="text-xs text-zinc-500 capitalize">
-                    {item.product.category.replace("-", " ")}
-                  </span>
-                  <span className="text-sm text-zinc-400">
-                    {formatPrice(item.product.price, item.product.currency)} each
-                  </span>
-
-                  <div className="mt-auto flex items-center justify-between pt-2">
-                    <div className="flex items-center rounded-lg border border-white/10 overflow-hidden">
-                      <button
-                        onClick={() => {
-                          if (item.quantity <= 1) {
-                            removeItem(item.productId);
-                          } else {
-                            updateItem(item.productId, item.quantity - 1);
-                          }
-                        }}
-                        disabled={loading}
-                        className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-                        aria-label="Decrease quantity"
+                  <div className="flex flex-1 flex-col gap-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        href={`/products/${item.product.slug}`}
+                        className="font-medium text-zinc-100 hover:text-white leading-snug line-clamp-2 transition-colors"
                       >
-                        <MinusIcon className="h-3 w-3" />
-                      </button>
-                      <span className="flex h-8 w-8 items-center justify-center text-sm font-medium text-zinc-200 select-none">
-                        {item.quantity}
-                      </span>
+                        {item.product.name}
+                      </Link>
                       <button
-                        onClick={() => updateItem(item.productId, item.quantity + 1)}
+                        onClick={() => handleRemove(item.productId)}
                         disabled={loading}
-                        className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-                        aria-label="Increase quantity"
+                        className="shrink-0 rounded-lg p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                        aria-label={`Remove ${item.product.name}`}
                       >
-                        <PlusIcon className="h-3 w-3" />
+                        <TrashIcon className="h-4 w-4" />
                       </button>
                     </div>
-
-                    <span className="text-sm font-semibold text-white">
-                      {formatPrice(item.lineTotal, item.product.currency)}
+                    <span className="text-xs text-zinc-500 capitalize">
+                      {item.product.category.replace("-", " ")}
                     </span>
+                    <span className="text-sm text-zinc-400">
+                      {formatPrice(item.product.price, item.product.currency)} each
+                    </span>
+
+                    <div className="mt-auto flex items-center justify-between pt-2">
+                      <div className="flex items-center rounded-lg border border-white/10 overflow-hidden">
+                        <button
+                          onClick={() => {
+                            if (item.quantity <= 1) {
+                              handleRemove(item.productId);
+                            } else {
+                              handleUpdate(item.productId, item.quantity - 1);
+                            }
+                          }}
+                          disabled={loading}
+                          className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                          aria-label="Decrease quantity"
+                        >
+                          <MinusIcon className="h-3 w-3" />
+                        </button>
+                        <span className="flex h-8 w-8 items-center justify-center text-sm font-medium text-zinc-200 select-none">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => handleUpdate(item.productId, item.quantity + 1)}
+                          disabled={loading}
+                          className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+                          aria-label="Increase quantity"
+                        >
+                          <PlusIcon className="h-3 w-3" />
+                        </button>
+                      </div>
+
+                      <span className="flex h-6 w-16 items-center justify-end text-sm font-semibold text-white">
+                        {isPending ? (
+                          <SpinnerIcon className="h-4 w-4 animate-spin text-zinc-400" />
+                        ) : (
+                          formatPrice(item.lineTotal, item.product.currency)
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </div>
 

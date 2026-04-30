@@ -1,11 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { cachedListProducts, cachedListCategories } from "@/lib/cached-api";
-import type { Category } from "@/lib/types";
-import ProductGrid from "@/components/ProductGrid";
-import CategoryFilter from "@/components/CategoryFilter";
-import SearchBar from "@/components/SearchBar";
-import Pagination from "@/components/Pagination";
+import { cachedListCategories } from "@/lib/cached-api";
+import ProductListPage from "@/components/ProductListPage";
 
 export async function generateStaticParams() {
   const categories = await cachedListCategories();
@@ -45,44 +41,8 @@ export default async function CategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
+  const categories = await cachedListCategories();
+  if (!categories.find((c) => c.slug === category)) notFound();
 
-  const [{ products, pagination }, categories] = await Promise.all([
-    cachedListProducts({ page: 1, category: category as Category, limit: 20 }),
-    cachedListCategories(),
-  ]);
-
-  const cat = categories.find((c) => c.slug === category);
-  if (!cat) notFound();
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-bold text-white capitalize">{cat.name}</h1>
-        <p className="text-zinc-400">
-          {pagination.total} product{pagination.total !== 1 ? "s" : ""}
-        </p>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-8">
-        <aside className="w-full lg:w-56 shrink-0">
-          <div className="sticky top-20 flex flex-col gap-6">
-            <SearchBar category={category} />
-            <CategoryFilter categories={categories} activeCategory={category} />
-          </div>
-        </aside>
-
-        <div className="flex-1 min-w-0">
-          <ProductGrid products={products} emptyMessage="No products in this category." />
-          {pagination.totalPages > 1 && (
-            <div className="mt-10">
-              <Pagination
-                pagination={pagination}
-                basePath={`/products/category/${category}`}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  return <ProductListPage page={1} category={category} />;
 }

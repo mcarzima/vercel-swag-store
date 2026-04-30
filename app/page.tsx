@@ -37,7 +37,7 @@ function HeroMosaic({ products }: { products: Product[] }) {
           className="relative aspect-square overflow-hidden rounded-xl bg-zinc-800"
         >
           {product?.images[0] ? (
-            <Link href={`/products/${product.slug}`} className="block h-full w-full">
+            <Link href={`/products/${product.slug}`} className="relative block h-full w-full">
               <Image
                 src={product.images[0]}
                 alt={product.name}

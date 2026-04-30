@@ -1,10 +1,23 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { cachedGetProduct, cachedGetProductStock } from "@/lib/cached-api";
+import { cachedGetProduct, cachedGetProductStock, cachedListProducts } from "@/lib/cached-api";
 import StockBadge from "@/components/StockBadge";
 import AddToCartButton from "@/components/AddToCartButton";
+
+export async function generateStaticParams() {
+  const slugs: { slug: string }[] = [];
+  let page = 1;
+  while (true) {
+    const { products, pagination } = await cachedListProducts({ page, limit: 100 });
+    slugs.push(...products.map((p) => ({ slug: p.slug })));
+    if (!pagination.hasNextPage) break;
+    page++;
+  }
+  return slugs;
+}
 
 export async function generateMetadata({
   params,
@@ -41,6 +54,32 @@ function formatPrice(cents: number, currency = "USD") {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
 }
 
+function ProductActionsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="h-6 w-24 animate-pulse rounded-full bg-zinc-800" />
+      <div className="flex gap-3">
+        <div className="h-11 w-32 animate-pulse rounded-xl bg-zinc-800" />
+        <div className="h-11 flex-1 animate-pulse rounded-xl bg-zinc-800" />
+      </div>
+    </div>
+  );
+}
+
+async function ProductActions({ slug, productId }: { slug: string; productId: string }) {
+  const stock = await cachedGetProductStock(slug);
+  return (
+    <div className="flex flex-col gap-4">
+      <StockBadge stock={stock} />
+      <AddToCartButton
+        productId={productId}
+        inStock={stock.inStock}
+        maxQuantity={stock.stock}
+      />
+    </div>
+  );
+}
+
 export default async function ProductDetailPage({
   params,
 }: {
@@ -48,9 +87,9 @@ export default async function ProductDetailPage({
 }) {
   const { slug } = await params;
 
-  let product, stock;
+  let product;
   try {
-    [product, stock] = await Promise.all([cachedGetProduct(slug), cachedGetProductStock(slug)]);
+    product = await cachedGetProduct(slug);
   } catch {
     notFound();
   }
@@ -67,7 +106,7 @@ export default async function ProductDetailPage({
         <span>/</span>
         <Link
           href={`/products/category/${product.category}`}
-          className="capitalize hover:text-zinc-300 transition-colors"
+              className="hover:text-zinc-300 transition-colors"
         >
           {product.category.replace("-", " ")}
         </Link>
@@ -111,20 +150,17 @@ export default async function ProductDetailPage({
         <div className="flex flex-col gap-6">
           <div>
             <Link
-          href={`/products/category/${product.category}`}
-            className="text-xs font-medium uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors capitalize"
+              href={`/products/category/${product.category}`}
+              className="text-xs font-medium uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors"
             >
               {product.category.replace("-", " ")}
             </Link>
             <h1 className="mt-2 text-3xl font-bold text-white sm:text-4xl">{product.name}</h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="text-3xl font-bold text-white">
-              {formatPrice(product.price, product.currency)}
-            </span>
-            <StockBadge stock={stock} />
-          </div>
+          <span className="text-3xl font-bold text-white">
+            {formatPrice(product.price, product.currency)}
+          </span>
 
           <p className="text-zinc-400 leading-7">{product.description}</p>
 
@@ -142,11 +178,9 @@ export default async function ProductDetailPage({
           )}
 
           <div className="pt-2">
-            <AddToCartButton
-              productId={product.id}
-              inStock={stock.inStock}
-              maxQuantity={stock.stock}
-            />
+            <Suspense fallback={<ProductActionsSkeleton />}>
+              <ProductActions slug={slug} productId={product.id} />
+            </Suspense>
           </div>
 
           <div className="border-t border-white/10 pt-4 text-xs text-zinc-600 space-y-1">
