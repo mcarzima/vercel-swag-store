@@ -1,18 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import { MagnifyingGlassIcon } from "@/components/icons";
 
-export default function SearchBar({
-  defaultValue = "",
-  category,
-}: {
-  defaultValue?: string;
-  category?: string;
-}) {
+export default function SearchBar({ category }: { category?: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
   const handleSubmit = useCallback(
@@ -20,20 +13,15 @@ export default function SearchBar({
       e.preventDefault();
       const fd = new FormData(e.currentTarget);
       const search = (fd.get("search") as string).trim();
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("page");
-      if (search) {
-        params.set("search", search);
-      } else {
-        params.delete("search");
-      }
-      const basePath = category ? `/products/category/${category}` : "/products";
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (category) params.set("category", category);
       const qs = params.toString();
       startTransition(() => {
-        router.push(qs ? `${basePath}?${qs}` : basePath);
+        router.push(`/search${qs ? `?${qs}` : ""}`);
       });
     },
-    [router, searchParams, category]
+    [router, category]
   );
 
   return (
@@ -44,7 +32,6 @@ export default function SearchBar({
       <input
         type="search"
         name="search"
-        defaultValue={defaultValue}
         placeholder="Search products…"
         className="w-full rounded-lg border border-white/10 bg-zinc-900 py-2.5 pl-9 pr-4 text-sm text-zinc-100 placeholder-zinc-500 focus:border-white/30 focus:outline-none focus:ring-0 transition-colors"
       />

@@ -108,12 +108,12 @@ export default async function Home() {
                 >
                   Shop All Products
                 </Link>
-                <Link
-                  href="/products?featured=true"
+                <a
+                  href="#featured-products"
                   className="inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3 text-sm font-semibold text-white hover:border-white/40 hover:bg-white/5 transition-colors"
                 >
                   Featured Items
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -122,7 +122,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <section id="featured-products" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-white">Featured Products</h2>
           <Link

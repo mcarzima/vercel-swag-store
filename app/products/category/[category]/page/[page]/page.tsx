@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { cachedListProducts, cachedListCategories } from "@/lib/cached-api";
 import type { Category } from "@/lib/types";
@@ -9,20 +9,33 @@ import Pagination from "@/components/Pagination";
 
 export async function generateStaticParams() {
   const categories = await cachedListCategories();
-  return categories.map((c) => ({ category: c.slug }));
+  const results = await Promise.all(
+    categories.map(async (cat) => {
+      const { pagination } = await cachedListProducts({
+        category: cat.slug,
+        page: 1,
+        limit: 20,
+      });
+      return Array.from({ length: pagination.totalPages - 1 }, (_, i) => ({
+        category: cat.slug,
+        page: String(i + 2),
+      }));
+    })
+  );
+  return results.flat();
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ category: string }>;
+  params: Promise<{ category: string; page: string }>;
 }): Promise<Metadata> {
-  const { category } = await params;
+  const { category, page } = await params;
   const categories = await cachedListCategories();
   const cat = categories.find((c) => c.slug === category);
   if (!cat) return { title: "Category Not Found" };
-  const title = cat.name;
-  const description = `Shop ${cat.name} in the Vercel Swag Store. ${cat.productCount} product${cat.productCount !== 1 ? "s" : ""} available.`;
+  const title = `${cat.name} — Page ${page}`;
+  const description = `Shop ${cat.name} in the Vercel Swag Store, page ${page}.`;
   return {
     title,
     description,
@@ -39,27 +52,32 @@ export async function generateMetadata({
   };
 }
 
-export default async function CategoryPage({
+export default async function CategoryPageN({
   params,
 }: {
-  params: Promise<{ category: string }>;
+  params: Promise<{ category: string; page: string }>;
 }) {
-  const { category } = await params;
+  const { category, page: pageStr } = await params;
+  const page = Number(pageStr);
+
+  if (page === 1) redirect(`/products/category/${category}`);
+  if (!Number.isInteger(page) || page < 1) notFound();
 
   const [{ products, pagination }, categories] = await Promise.all([
-    cachedListProducts({ page: 1, category: category as Category, limit: 20 }),
+    cachedListProducts({ page, category: category as Category, limit: 20 }),
     cachedListCategories(),
   ]);
 
   const cat = categories.find((c) => c.slug === category);
   if (!cat) notFound();
+  if (page > pagination.totalPages) notFound();
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex flex-col gap-2 mb-8">
         <h1 className="text-3xl font-bold text-white capitalize">{cat.name}</h1>
         <p className="text-zinc-400">
-          {pagination.total} product{pagination.total !== 1 ? "s" : ""}
+          Page {page} of {pagination.totalPages} &middot; {pagination.total} product{pagination.total !== 1 ? "s" : ""}
         </p>
       </div>
 

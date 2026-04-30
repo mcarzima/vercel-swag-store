@@ -5,24 +5,13 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 interface PaginationProps {
   pagination: PaginationMeta;
   basePath: string;
-  currentParams?: Record<string, string>;
 }
 
-function pageHref(
-  basePath: string,
-  page: number,
-  params: Record<string, string>
-): string {
-  const p = new URLSearchParams(params);
-  p.set("page", String(page));
-  return `${basePath}?${p.toString()}`;
+function pageHref(basePath: string, page: number): string {
+  return page === 1 ? basePath : `${basePath}/page/${page}`;
 }
 
-export default function Pagination({
-  pagination,
-  basePath,
-  currentParams = {},
-}: PaginationProps) {
+export default function Pagination({ pagination, basePath }: PaginationProps) {
   if (pagination.totalPages <= 1) return null;
 
   const { page, totalPages, hasPreviousPage, hasNextPage } = pagination;
@@ -41,7 +30,7 @@ export default function Pagination({
   return (
     <nav className="flex items-center justify-center gap-1" aria-label="Pagination">
       <Link
-        href={hasPreviousPage ? pageHref(basePath, page - 1, currentParams) : "#"}
+        href={hasPreviousPage ? pageHref(basePath, page - 1) : "#"}
         aria-disabled={!hasPreviousPage}
         className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
           hasPreviousPage
@@ -60,7 +49,7 @@ export default function Pagination({
         ) : (
           <Link
             key={p}
-            href={pageHref(basePath, p, currentParams)}
+            href={pageHref(basePath, p)}
             className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
               p === page
                 ? "bg-white text-zinc-900"
@@ -73,7 +62,7 @@ export default function Pagination({
       )}
 
       <Link
-        href={hasNextPage ? pageHref(basePath, page + 1, currentParams) : "#"}
+        href={hasNextPage ? pageHref(basePath, page + 1) : "#"}
         aria-disabled={!hasNextPage}
         className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
           hasNextPage
