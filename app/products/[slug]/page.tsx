@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProduct, getProductStock } from "@/lib/api";
+import { cachedGetProduct, cachedGetProductStock } from "@/lib/cached-api";
 import StockBadge from "@/components/StockBadge";
 import AddToCartButton from "@/components/AddToCartButton";
 
@@ -13,7 +13,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   try {
-    const product = await getProduct(slug);
+    const product = await cachedGetProduct(slug);
     const description = product.description.slice(0, 160);
     return {
       title: product.name,
@@ -50,7 +50,7 @@ export default async function ProductDetailPage({
 
   let product, stock;
   try {
-    [product, stock] = await Promise.all([getProduct(slug), getProductStock(slug)]);
+    [product, stock] = await Promise.all([cachedGetProduct(slug), cachedGetProductStock(slug)]);
   } catch {
     notFound();
   }
@@ -66,7 +66,7 @@ export default async function ProductDetailPage({
         <Link href="/products" className="hover:text-zinc-300 transition-colors">Shop</Link>
         <span>/</span>
         <Link
-          href={`/products?category=${product.category}`}
+          href={`/products/category/${product.category}`}
           className="capitalize hover:text-zinc-300 transition-colors"
         >
           {product.category.replace("-", " ")}
@@ -111,8 +111,8 @@ export default async function ProductDetailPage({
         <div className="flex flex-col gap-6">
           <div>
             <Link
-              href={`/products?category=${product.category}`}
-              className="text-xs font-medium uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors capitalize"
+          href={`/products/category/${product.category}`}
+            className="text-xs font-medium uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors capitalize"
             >
               {product.category.replace("-", " ")}
             </Link>

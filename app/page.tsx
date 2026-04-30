@@ -3,7 +3,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getActivePromotion, listProducts } from "@/lib/api";
+import { cachedGetActivePromotion, cachedListProducts } from "@/lib/cached-api";
 import type { Promotion, Product } from "@/lib/types";
 import PromotionBanner from "@/components/PromotionBanner";
 import ProductGrid from "@/components/ProductGrid";
@@ -37,13 +37,15 @@ function HeroMosaic({ products }: { products: Product[] }) {
           className="relative aspect-square overflow-hidden rounded-xl bg-zinc-800"
         >
           {product?.images[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="(max-width: 1024px) 50vw, 25vw"
-              className="object-cover transition-transform duration-500 hover:scale-105"
-            />
+            <Link href={`/products/${product.slug}`} className="block h-full w-full">
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                fill
+                sizes="(max-width: 1024px) 50vw, 25vw"
+                className="object-cover transition-transform duration-500 hover:scale-105"
+              />
+            </Link>
           ) : (
             <div className="h-full w-full bg-zinc-800" />
           )}
@@ -58,12 +60,12 @@ export default async function Home() {
   let featuredProducts: Product[] = [];
 
   await Promise.all([
-    getActivePromotion()
+    cachedGetActivePromotion()
       .then((p) => {
         promotion = p;
       })
       .catch(() => {}),
-    listProducts({ featured: true, limit: 8 })
+    cachedListProducts({ featured: true, limit: 8 })
       .then(({ products }) => {
         featuredProducts = products;
       })

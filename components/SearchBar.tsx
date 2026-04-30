@@ -4,7 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import { MagnifyingGlassIcon } from "@/components/icons";
 
-export default function SearchBar({ defaultValue = "" }: { defaultValue?: string }) {
+export default function SearchBar({
+  defaultValue = "",
+  category,
+}: {
+  defaultValue?: string;
+  category?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
@@ -21,11 +27,13 @@ export default function SearchBar({ defaultValue = "" }: { defaultValue?: string
       } else {
         params.delete("search");
       }
+      const basePath = category ? `/products/category/${category}` : "/products";
+      const qs = params.toString();
       startTransition(() => {
-        router.push(`/products?${params.toString()}`);
+        router.push(qs ? `${basePath}?${qs}` : basePath);
       });
     },
-    [router, searchParams]
+    [router, searchParams, category]
   );
 
   return (

@@ -13,11 +13,8 @@ export default function CategoryFilter({
   searchQuery,
 }: CategoryFilterProps) {
   const baseHref = (slug?: string) => {
-    const params = new URLSearchParams();
-    if (slug) params.set("category", slug);
-    if (searchQuery) params.set("search", searchQuery);
-    const qs = params.toString();
-    return `/products${qs ? `?${qs}` : ""}`;
+    const base = slug ? `/products/category/${slug}` : "/products";
+    return searchQuery ? `${base}?search=${encodeURIComponent(searchQuery)}` : base;
   };
 
   return (

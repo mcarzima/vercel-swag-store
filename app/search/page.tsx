@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { listProducts, listCategories } from "@/lib/api";
+import { cachedListProducts, cachedListCategories } from "@/lib/cached-api";
 import type { Category } from "@/lib/types";
 import ProductGrid from "@/components/ProductGrid";
 import SearchPageControls from "@/components/SearchPageControls";
@@ -39,9 +39,9 @@ export default async function SearchPage({
 
   const [{ products }, categories] = await Promise.all([
     isDefaultState
-      ? listProducts({ featured: true, limit: 5 })
-      : listProducts({ search, category, limit: 5 }),
-    listCategories(),
+      ? cachedListProducts({ featured: true, limit: 5 })
+      : cachedListProducts({ search, category, limit: 5 }),
+    cachedListCategories(),
   ]);
 
   const resultLabel = isDefaultState

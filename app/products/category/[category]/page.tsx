@@ -1,47 +1,69 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { cachedListProducts, cachedListCategories } from "@/lib/cached-api";
+import type { Category } from "@/lib/types";
 import ProductGrid from "@/components/ProductGrid";
 import CategoryFilter from "@/components/CategoryFilter";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/Pagination";
 
-import type { Metadata } from "next";
+export async function generateStaticParams() {
+  const categories = await cachedListCategories();
+  return categories.map((c) => ({ category: c.slug }));
+}
 
-const description = "Browse and search the full Vercel Swag Store catalog of developer apparel, accessories, and gear.";
-
-export const metadata: Metadata = {
-  title: "Search",
-  description,
-  openGraph: {
-    title: "Search Products | Vercel Swag Store",
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}): Promise<Metadata> {
+  const { category } = await params;
+  const categories = await cachedListCategories();
+  const cat = categories.find((c) => c.slug === category);
+  if (!cat) return { title: "Category Not Found" };
+  const title = cat.name;
+  const description = `Shop ${cat.name} in the Vercel Swag Store. ${cat.productCount} product${cat.productCount !== 1 ? "s" : ""} available.`;
+  return {
+    title,
     description,
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Vercel Swag Store" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Search Products | Vercel Swag Store",
-    description,
-  },
-};
+    openGraph: {
+      title: `${title} | Vercel Swag Store`,
+      description,
+      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Vercel Swag Store" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | Vercel Swag Store`,
+      description,
+    },
+  };
+}
 
 interface SearchParams {
   page?: string;
   search?: string;
 }
 
-export default async function ProductsPage({
+export default async function CategoryPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ category: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-  const params = await searchParams;
-  const page = Number(params.page ?? 1);
-  const search = params.search;
+  const { category } = await params;
+  const sp = await searchParams;
+  const page = Number(sp.page ?? 1);
+  const search = sp.search;
 
   const [{ products, pagination }, categories] = await Promise.all([
-    cachedListProducts({ page, search, limit: 20 }),
+    cachedListProducts({ page, category: category as Category, search, limit: 20 }),
     cachedListCategories(),
   ]);
+
+  const cat = categories.find((c) => c.slug === category);
+  if (!cat) notFound();
 
   const currentParams: Record<string, string> = {};
   if (search) currentParams.search = search;
@@ -49,7 +71,7 @@ export default async function ProductsPage({
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex flex-col gap-2 mb-8">
-        <h1 className="text-3xl font-bold text-white">Shop</h1>
+        <h1 className="text-3xl font-bold text-white capitalize">{cat.name}</h1>
         <p className="text-zinc-400">
           {pagination.total} product{pagination.total !== 1 ? "s" : ""}
           {search ? ` matching "${search}"` : ""}
@@ -60,10 +82,11 @@ export default async function ProductsPage({
         <aside className="w-full lg:w-56 shrink-0">
           <div className="sticky top-20 flex flex-col gap-6">
             <Suspense fallback={<div className="h-10 w-full animate-pulse rounded-lg bg-zinc-800" />}>
-              <SearchBar defaultValue={search} />
+              <SearchBar defaultValue={search} category={category} />
             </Suspense>
             <CategoryFilter
               categories={categories}
+              activeCategory={category}
               searchQuery={search}
             />
           </div>
@@ -76,7 +99,7 @@ export default async function ProductsPage({
             <div className="mt-10">
               <Pagination
                 pagination={pagination}
-                basePath="/products"
+                basePath={`/products/category/${category}`}
                 currentParams={currentParams}
               />
             </div>
