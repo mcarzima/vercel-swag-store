@@ -44,6 +44,7 @@ function HeroMosaic({ products }: { products: Product[] }) {
                 fill
                 sizes="(max-width: 1024px) 50vw, 25vw"
                 className="object-cover transition-transform duration-500 hover:scale-105"
+                priority={i === 0}
               />
             </Link>
           ) : (

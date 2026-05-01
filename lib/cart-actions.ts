@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { revalidateTag } from "next/cache";
 import {
   createCartOnServer,
   getCartOnServer,
@@ -58,7 +59,9 @@ export async function getCartAction(): Promise<Cart | null> {
 export async function addItemAction(productId: string, quantity: number): Promise<Cart> {
   const token = await ensureToken();
   try {
-    return await addItemOnServer(token, productId, quantity);
+    const cart = await addItemOnServer(token, productId, quantity);
+    revalidateTag("stock", "max");
+    return cart;
   } catch (err) {
     await clearToken();
     throw err;
@@ -69,7 +72,9 @@ export async function updateItemAction(itemId: string, quantity: number): Promis
   const token = await getToken();
   if (!token) throw new Error("No active cart");
   try {
-    return await updateItemOnServer(token, itemId, quantity);
+    const cart = await updateItemOnServer(token, itemId, quantity);
+    revalidateTag("stock", "max");
+    return cart;
   } catch (err) {
     await clearToken();
     throw err;
@@ -80,7 +85,9 @@ export async function removeItemAction(itemId: string): Promise<Cart> {
   const token = await getToken();
   if (!token) throw new Error("No active cart");
   try {
-    return await removeItemOnServer(token, itemId);
+    const cart = await removeItemOnServer(token, itemId);
+    revalidateTag("stock", "max");
+    return cart;
   } catch (err) {
     await clearToken();
     throw err;

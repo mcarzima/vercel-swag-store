@@ -11,20 +11,20 @@ import {
 import type { ProductListParams } from "./types";
 
 export async function cachedListProducts(params: ProductListParams = {}) {
-  cacheLife("minutes");
+  cacheLife("products");
   cacheTag("products");
   return listProducts(params);
 }
 
 export async function cachedGetProduct(slug: string) {
-  cacheLife("hours");
+  cacheLife("products");
   cacheTag("products", `product-${slug}`);
   return getProduct(slug);
 }
 
 export async function cachedGetProductStock(slug: string) {
-  cacheLife("minutes");
-  cacheTag(`product-stock-${slug}`);
+  cacheLife("stock");
+  cacheTag("stock", `product-stock-${slug}`);
   return getProductStock(slug);
 }
 
