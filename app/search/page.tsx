@@ -47,9 +47,11 @@ async function ProductResults({ searchParams }: { searchParams: Promise<SearchPa
   const category = params.category as Category | undefined;
   const isDefaultState = !search;
 
-  const { products } = isDefaultState
-    ? await cachedListProducts({ featured: true, limit: 5 })
+
+  const { products: rawProducts } = isDefaultState
+    ? await cachedListProducts({ featured: true, limit: 8 })
     : await cachedListProducts({ search, category, limit: 5 });
+  const products = isDefaultState ? rawProducts.slice(0, 5) : rawProducts;
 
   const resultLabel = isDefaultState
     ? "Popular products"
