@@ -41,36 +41,38 @@ function ProductGridSkeleton() {
   );
 }
 
-async function ProductResults({ searchParams }: { searchParams: Promise<SearchParams> }) {
+
+async function SearchResults({
+  searchParams,
+  defaultContent,
+}: {
+  searchParams: Promise<SearchParams>;
+  defaultContent: React.ReactNode;
+}) {
   const params = await searchParams;
   const search = params.search?.trim();
   const category = params.category as Category | undefined;
-  const isDefaultState = !search;
 
+  if (!search && !category) {
+   
+    return defaultContent;
+  }
 
-  const { products: rawProducts } = isDefaultState
-    ? await cachedListProducts({ featured: true, limit: 8 })
-    : await cachedListProducts({ search, category, limit: 5 });
-  const products = isDefaultState ? rawProducts.slice(0, 5) : rawProducts;
+  const { products } = await cachedListProducts({ search, category, limit: 5 });
 
-  const resultLabel = isDefaultState
-    ? "Popular products"
-    : products.length === 0
-    ? `No results for "${search}"`
-    : `${products.length} result${products.length !== 1 ? "s" : ""} for "${search}"${
-        category ? ` in ${category.replace("-", " ")}` : ""
-      }`;
+  const resultLabel =
+    products.length === 0
+      ? `No results for "${search}"`
+      : `${products.length} result${products.length !== 1 ? "s" : ""} for "${search}"${
+          category ? ` in ${category.replace("-", " ")}` : ""
+        }`;
 
   return (
     <>
       <p className="text-sm text-zinc-500 mb-4">{resultLabel}</p>
       <ProductGrid
         products={products}
-        emptyMessage={
-          isDefaultState
-            ? "No products available."
-            : `No products found matching "${search}". Try a different search term.`
-        }
+        emptyMessage={`No products found matching "${search}". Try a different search term.`}
       />
     </>
   );
@@ -81,7 +83,19 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const categories = await cachedListCategories();
+
+  const [categories, { products: featuredRaw }] = await Promise.all([
+    cachedListCategories(),
+    cachedListProducts({ featured: true, limit: 8 }),
+  ]);
+  const featuredProducts = featuredRaw.slice(0, 5);
+
+  const defaultContent = (
+    <>
+      <p className="text-sm text-zinc-500 mb-4">Popular products</p>
+      <ProductGrid products={featuredProducts} emptyMessage="No products available." />
+    </>
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10">
@@ -97,8 +111,9 @@ export default async function SearchPage({
       </Suspense>
 
       <div className="mt-8">
+      
         <Suspense fallback={<ProductGridSkeleton />}>
-          <ProductResults searchParams={searchParams} />
+          <SearchResults searchParams={searchParams} defaultContent={defaultContent} />
         </Suspense>
       </div>
     </div>
