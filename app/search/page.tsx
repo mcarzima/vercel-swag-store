@@ -27,22 +27,29 @@ interface SearchParams {
   category?: string;
 }
 
-export default async function SearchPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
+function ProductGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex flex-col gap-3">
+          <div className="aspect-square animate-pulse rounded-2xl bg-zinc-800" />
+          <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
+          <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function ProductResults({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const search = params.search?.trim();
   const category = params.category as Category | undefined;
   const isDefaultState = !search;
 
-  const [{ products }, categories] = await Promise.all([
-    isDefaultState
-      ? cachedListProducts({ featured: true, limit: 5 })
-      : cachedListProducts({ search, category, limit: 5 }),
-    cachedListCategories(),
-  ]);
+  const { products } = isDefaultState
+    ? await cachedListProducts({ featured: true, limit: 5 })
+    : await cachedListProducts({ search, category, limit: 5 });
 
   const resultLabel = isDefaultState
     ? "Popular products"
@@ -51,6 +58,28 @@ export default async function SearchPage({
     : `${products.length} result${products.length !== 1 ? "s" : ""} for "${search}"${
         category ? ` in ${category.replace("-", " ")}` : ""
       }`;
+
+  return (
+    <>
+      <p className="text-sm text-zinc-500 mb-4">{resultLabel}</p>
+      <ProductGrid
+        products={products}
+        emptyMessage={
+          isDefaultState
+            ? "No products available."
+            : `No products found matching "${search}". Try a different search term.`
+        }
+      />
+    </>
+  );
+}
+
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const categories = await cachedListCategories();
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-10">
@@ -62,23 +91,13 @@ export default async function SearchPage({
       </div>
 
       <Suspense fallback={<div className="h-20 w-full animate-pulse rounded-xl bg-zinc-800" />}>
-        <SearchPageControls
-          categories={categories}
-          defaultSearch={search ?? ""}
-          defaultCategory={category ?? ""}
-        />
+        <SearchPageControls categories={categories} />
       </Suspense>
 
       <div className="mt-8">
-        <p className="text-sm text-zinc-500 mb-4">{resultLabel}</p>
-        <ProductGrid
-          products={products}
-          emptyMessage={
-            isDefaultState
-              ? "No products available."
-              : `No products found matching "${search}". Try a different search term.`
-          }
-        />
+        <Suspense fallback={<ProductGridSkeleton />}>
+          <ProductResults searchParams={searchParams} />
+        </Suspense>
       </div>
     </div>
   );

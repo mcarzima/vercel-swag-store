@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlassIcon } from "@/components/icons";
 import type { CategoryInfo } from "@/lib/types";
 
 interface SearchPageControlsProps {
   categories: CategoryInfo[];
-  defaultSearch?: string;
-  defaultCategory?: string;
 }
 
 function Spinner() {
@@ -37,14 +35,11 @@ function Spinner() {
   );
 }
 
-export default function SearchPageControls({
-  categories,
-  defaultSearch = "",
-  defaultCategory = "",
-}: SearchPageControlsProps) {
+export default function SearchPageControls({ categories }: SearchPageControlsProps) {
   const router = useRouter();
-  const [query, setQuery] = useState(defaultSearch);
-  const [category, setCategory] = useState(defaultCategory);
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("search") ?? "");
+  const [category, setCategory] = useState(searchParams.get("category") ?? "");
   const [isPending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const categoryRef = useRef(category);
