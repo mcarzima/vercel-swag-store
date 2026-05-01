@@ -20,9 +20,9 @@ interface CartContextValue {
   cart: Cart | null;
   loading: boolean;
   error: string | null;
-  addItem: (productId: string, quantity?: number) => Promise<void>;
-  updateItem: (itemId: string, quantity: number) => Promise<void>;
-  removeItem: (itemId: string) => Promise<void>;
+  addItem: (productId: string, slug: string, quantity?: number) => Promise<void>;
+  updateItem: (itemId: string, slug: string, quantity: number) => Promise<void>;
+  removeItem: (itemId: string, slug: string) => Promise<void>;
   refreshCart: () => Promise<void>;
 }
 
@@ -46,11 +46,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     refreshCart();
   }, [refreshCart]);
 
-  const addItem = useCallback(async (productId: string, quantity = 1) => {
+  const addItem = useCallback(async (productId: string, slug: string, quantity = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await addItemAction(productId, quantity);
+      const updated = await addItemAction(productId, slug, quantity);
       setCart(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add item");
@@ -59,11 +59,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const updateItem = useCallback(async (itemId: string, quantity: number) => {
+  const updateItem = useCallback(async (itemId: string, slug: string, quantity: number) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await updateItemAction(itemId, quantity);
+      const updated = await updateItemAction(itemId, slug, quantity);
       setCart(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to update item");
@@ -73,11 +73,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const removeItem = useCallback(async (itemId: string) => {
+  const removeItem = useCallback(async (itemId: string, slug: string) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await removeItemAction(itemId);
+      const updated = await removeItemAction(itemId, slug);
       setCart(updated);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to remove item");

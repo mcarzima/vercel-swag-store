@@ -6,12 +6,14 @@ import { PlusIcon, MinusIcon } from "@/components/icons";
 
 interface AddToCartButtonProps {
   productId: string;
+  slug: string;
   inStock: boolean;
   maxQuantity: number;
 }
 
 export default function AddToCartButton({
   productId,
+  slug,
   inStock,
   maxQuantity,
 }: AddToCartButtonProps) {
@@ -20,7 +22,7 @@ export default function AddToCartButton({
   const { addItem, loading } = useCart();
 
   const handleAdd = async () => {
-    await addItem(productId, quantity);
+    await addItem(productId, slug, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

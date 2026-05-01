@@ -14,15 +14,15 @@ export default function CartContent() {
   const { cart, loading, error, updateItem, removeItem } = useCart();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  const handleUpdate = async (productId: string, quantity: number) => {
+  const handleUpdate = async (productId: string, slug: string, quantity: number) => {
     setPendingId(productId);
-    await updateItem(productId, quantity);
+    await updateItem(productId, slug, quantity);
     setPendingId(null);
   };
 
-  const handleRemove = async (productId: string) => {
+  const handleRemove = async (productId: string, slug: string) => {
     setPendingId(productId);
-    await removeItem(productId);
+    await removeItem(productId, slug);
     setPendingId(null);
   };
 
@@ -91,7 +91,7 @@ export default function CartContent() {
                         {item.product.name}
                       </Link>
                       <button
-                        onClick={() => handleRemove(item.productId)}
+                        onClick={() => handleRemove(item.productId, item.product.slug)}
                         disabled={loading}
                         className="shrink-0 rounded-lg p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                         aria-label={`Remove ${item.product.name}`}
@@ -111,9 +111,9 @@ export default function CartContent() {
                         <button
                           onClick={() => {
                             if (item.quantity <= 1) {
-                              handleRemove(item.productId);
+                              handleRemove(item.productId, item.product.slug);
                             } else {
-                              handleUpdate(item.productId, item.quantity - 1);
+                              handleUpdate(item.productId, item.product.slug, item.quantity - 1);
                             }
                           }}
                           disabled={loading}
@@ -126,7 +126,7 @@ export default function CartContent() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => handleUpdate(item.productId, item.quantity + 1)}
+                          onClick={() => handleUpdate(item.productId, item.product.slug, item.quantity + 1)}
                           disabled={loading}
                           className="flex h-8 w-8 items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
                           aria-label="Increase quantity"

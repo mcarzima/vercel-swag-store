@@ -73,6 +73,7 @@ async function ProductActions({ slug, productId }: { slug: string; productId: st
       <StockBadge stock={stock} />
       <AddToCartButton
         productId={productId}
+        slug={slug}
         inStock={stock.inStock}
         maxQuantity={stock.stock}
       />

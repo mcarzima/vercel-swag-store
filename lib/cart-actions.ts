@@ -56,11 +56,11 @@ export async function getCartAction(): Promise<Cart | null> {
   }
 }
 
-export async function addItemAction(productId: string, quantity: number): Promise<Cart> {
+export async function addItemAction(productId: string, slug: string, quantity: number): Promise<Cart> {
   const token = await ensureToken();
   try {
     const cart = await addItemOnServer(token, productId, quantity);
-    revalidateTag("stock", "max");
+    revalidateTag(`product-stock-${slug}`, "max");
     return cart;
   } catch (err) {
     await clearToken();
@@ -68,12 +68,12 @@ export async function addItemAction(productId: string, quantity: number): Promis
   }
 }
 
-export async function updateItemAction(itemId: string, quantity: number): Promise<Cart> {
+export async function updateItemAction(itemId: string, slug: string, quantity: number): Promise<Cart> {
   const token = await getToken();
   if (!token) throw new Error("No active cart");
   try {
     const cart = await updateItemOnServer(token, itemId, quantity);
-    revalidateTag("stock", "max");
+    revalidateTag(`product-stock-${slug}`, "max");
     return cart;
   } catch (err) {
     await clearToken();
@@ -81,12 +81,12 @@ export async function updateItemAction(itemId: string, quantity: number): Promis
   }
 }
 
-export async function removeItemAction(itemId: string): Promise<Cart> {
+export async function removeItemAction(itemId: string, slug: string): Promise<Cart> {
   const token = await getToken();
   if (!token) throw new Error("No active cart");
   try {
     const cart = await removeItemOnServer(token, itemId);
-    revalidateTag("stock", "max");
+    revalidateTag(`product-stock-${slug}`, "max");
     return cart;
   } catch (err) {
     await clearToken();
