@@ -18,7 +18,8 @@ export async function generateStaticParams() {
       }));
     })
   );
-  return results.flat();
+  const flat = results.flat();
+  return flat.length > 0 ? flat : [{ category: categories[0]?.slug ?? "accessories", page: "1" }];
 }
 
 export async function generateMetadata({

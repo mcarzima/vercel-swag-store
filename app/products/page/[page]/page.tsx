@@ -5,9 +5,10 @@ import ProductListPage from "@/components/ProductListPage";
 
 export async function generateStaticParams() {
   const { pagination } = await cachedListProducts({ page: 1, limit: 20 });
-  return Array.from({ length: pagination.totalPages - 1 }, (_, i) => ({
+  const pages = Array.from({ length: pagination.totalPages - 1 }, (_, i) => ({
     page: String(i + 2),
   }));
+  return pages.length > 0 ? pages : [{ page: "1" }];
 }
 
 export async function generateMetadata({
