@@ -4,7 +4,6 @@ import type {
   CategoryInfo,
   Promotion,
   Cart,
-  StoreConfig,
   ApiResponse,
   ApiListResponse,
   ProductListParams,
@@ -82,12 +81,6 @@ export async function listCategories(): Promise<CategoryInfo[]> {
 
 export async function getActivePromotion(): Promise<Promotion> {
   const data = await apiFetch<ApiResponse<Promotion>>("/promotions");
-  if (!data.success) throw new ApiError(data.error.code, data.error.message);
-  return data.data;
-}
-
-export async function getStoreConfig(): Promise<StoreConfig> {
-  const data = await apiFetch<ApiResponse<StoreConfig>>("/store/config");
   if (!data.success) throw new ApiError(data.error.code, data.error.message);
   return data.data;
 }
